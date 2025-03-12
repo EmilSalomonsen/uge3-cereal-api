@@ -24,10 +24,17 @@ class ProductCreate(ProductBase):
     pass
 
 class ProductResponse(ProductBase):
-    id: str = Field(..., alias="_id")
+    id: str = Field(alias="_id")
+
+    @classmethod
+    def from_mongo(cls, data: dict):
+        if data.get("_id"):
+            data["id"] = str(data["_id"])
+            del data["_id"]
+        return cls(**data)
 
     class Config:
-        populate_by_name = True
         json_encoders = {
             ObjectId: str
         }
+        populate_by_name = True

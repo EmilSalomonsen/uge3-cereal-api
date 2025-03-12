@@ -8,6 +8,15 @@ load_dotenv()
 
 class DatabaseConnection:
     _instance = None
+
+    def init_users(self):
+        """Initialize users collection if it doesn't exist"""
+        try:
+            # Opret unique index på email
+            self.db.users.create_index("email", unique=True)
+            print("Users collection initialized")
+        except Exception as e:
+            print(f"Error initializing users collection: {e}")
     
     def __new__(cls):
         if cls._instance is None:
