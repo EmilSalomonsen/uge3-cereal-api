@@ -7,31 +7,35 @@ from pathlib import Path
 load_dotenv()
 
 class DatabaseConnection:
-    _instance = None
+    _instance = None  # Singleton pattern - kun én database forbindelse
 
-    def init_users(self):
-        """Initialize users collection if it doesn't exist"""
-        try:
-            # Opret unique index på email
-            self.db.users.create_index("email", unique=True)
-            print("Users collection initialized")
-        except Exception as e:
-            print(f"Error initializing users collection: {e}")
-    
     def __new__(cls):
+        """Singleton pattern - sikrer at vi kun har én database forbindelse"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
             print(f"Connecting to MongoDB at: {mongo_url}")
             cls._instance.client = MongoClient(mongo_url)
-            cls._instance.db = cls._instance.client.cereal_db  # Dette opretter cereal_db databasen
+            cls._instance.db = cls._instance.client.cereal_db
         return cls._instance
 
     def get_db(self):
+        """Returnerer database instansen"""
         return self.db
 
+    def init_users(self):
+        """Initialiserer users collection med unik email index"""
+        try:
+            self.db.users.create_index("email", unique=True)
+            print("Users collection initialized")
+        except Exception as e:
+            print(f"Error initializing users collection: {e}")
+
     def init_db(self):
-        """Initialize database with cereal data if empty"""
+        """
+        Initialiserer databasen med cerealdata fra CSV fil
+        Konverterer datatyper og håndterer specielle formateringer
+        """
         try:
             count = self.db.products.count_documents({})
             print(f"Current number of products in database: {count}")

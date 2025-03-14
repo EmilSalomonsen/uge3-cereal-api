@@ -24,7 +24,7 @@ async def get_products(
         query["mfr"] = manufacturer
     
     products = list(db.products.find(query).skip(skip).limit(limit))
-    return [ProductResponse.from_mongo(product) for product in products]  # Konverter hver produkt
+    return [ProductResponse.from_mongo(product) for product in products]
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str):
@@ -33,6 +33,25 @@ async def get_product(product_id: str):
         product = db.products.find_one({"_id": ObjectId(product_id)})
         if product is None:
             raise HTTPException(status_code=404, detail="Product not found")
+        return ProductResponse.from_mongo(product)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid product ID format")
+
+@router.get("/products/{product_id}/edit", response_model=ProductCreate)
+async def get_product_for_edit(
+    product_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a product's current values for editing"""
+    try:
+        product = db.products.find_one({"_id": ObjectId(product_id)})
+        if product is None:
+            raise HTTPException(status_code=404, detail="Product not found")
+        # Fjern _id og image_url da disse ikke skal ændres
+        if "_id" in product:
+            del product["_id"]
+        if "image_url" in product:
+            del product["image_url"]
         return product
     except InvalidId:
         raise HTTPException(status_code=400, detail="Invalid product ID format")
@@ -46,7 +65,7 @@ async def create_product(
     product_dict = product.model_dump()
     result = db.products.insert_one(product_dict)
     created_product = db.products.find_one({"_id": result.inserted_id})
-    return ProductResponse.from_mongo(created_product)  # Konverter nyt produkt
+    return ProductResponse.from_mongo(created_product)
 
 @router.put("/products/{product_id}", response_model=ProductResponse)
 async def update_product(
@@ -64,7 +83,7 @@ async def update_product(
         if result.modified_count == 0:
             raise HTTPException(status_code=404, detail="Product not found")
         updated_product = db.products.find_one({"_id": ObjectId(product_id)})
-        return ProductResponse.from_mongo(updated_product)  # Konverter opdateret produkt
+        return ProductResponse.from_mongo(updated_product)
     except:
         raise HTTPException(status_code=400, detail="Invalid product ID")
 

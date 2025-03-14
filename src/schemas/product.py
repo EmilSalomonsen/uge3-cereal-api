@@ -19,26 +19,30 @@ class ProductBase(BaseModel):
     weight: float
     cups: float
     rating: float
-    image_url: Optional[str] = None  # Nyt felt, valgfrit med None som default
+    image_url: Optional[str] = None
 
 class ProductCreate(ProductBase):
     pass
 
 class ProductResponse(ProductBase):
-    id: str = Field(alias="_id")
+    id: str
 
     @classmethod
     def from_mongo(cls, data: dict):
+        """Konverterer MongoDB dokument til ProductResponse model"""
         if data.get("_id"):
-            data["id"] = str(data["_id"])
-            del data["_id"]
-            # Tilføj image URL hvis det ikke allerede findes
-            if "image_url" not in data:
-                data["image_url"] = f"/api/products/{data['id']}/image"
+            # Lav en kopi af data så vi ikke modificerer originalen
+            response_data = data.copy()
+            # Konverter _id til id
+            response_data["id"] = str(data["_id"])
+            del response_data["_id"]
+            # Tilføj image_url hvis det ikke findes
+            if "image_url" not in response_data:
+                response_data["image_url"] = f"/api/products/{response_data['id']}/image"
+            return cls(**response_data)
         return cls(**data)
 
     class Config:
         json_encoders = {
             ObjectId: str
         }
-        populate_by_name = True
