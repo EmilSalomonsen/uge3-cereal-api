@@ -23,6 +23,14 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
+3. Konfigurér miljøvariabler
+```bash
+cp .env.example .env
+
+# Opdater .env med dine egne værdier
+# Generér din egen JWT_SECRET_KEY med: 
+# python -c "import secrets; print(secrets.token_hex(32))"
+
 3. Start MongoDB
 
 4. Start serveren
